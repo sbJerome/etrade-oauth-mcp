@@ -501,7 +501,7 @@ async def etrade_preview_mf_order(
                    investment_amount=investment_amount, quantity=quantity,
                    quantity_type=quantity_type, client_order_id=client_order_id)
     print(f"MF_DEBUG fields={_fields}", flush=True)
-    print(f"MF_DEBUG xml={c._mf_order_xml('PreviewOrderRequest', _fields)}", flush=True)
+    print(f"MF_DEBUG json={c._mf_order_json('PreviewOrderRequest', _fields)}", flush=True)
     return await _run(c.preview_mf_order, account_id_key,
                       symbol=symbol, order_action=order_action,
                       investment_amount=investment_amount, quantity=quantity,
