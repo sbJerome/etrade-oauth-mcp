@@ -5,7 +5,7 @@ One-time setup:
   1. etrade_authorize_start()  → open URL → approve → copy verifier
   2. etrade_authorize_complete(verifier)
 
-Switch environments with etrade_set_sandbox(True/False). Default: sandbox.
+Switch environments with etrade_set_sandbox(True/False). Default: live.
 """
 
 import asyncio
@@ -19,7 +19,7 @@ from mcp.server.fastmcp import FastMCP
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-_sandbox: bool = True
+_sandbox: bool = False
 _client = None
 _client_lock = asyncio.Lock()
 
