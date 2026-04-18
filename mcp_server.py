@@ -449,6 +449,57 @@ async def etrade_place_order(
 
 
 @mcp.tool()
+async def etrade_preview_mf_order(
+    account_id_key: str,
+    symbol: str,
+    order_action: str,
+    investment_amount: Optional[float] = None,
+    quantity: Optional[float] = None,
+    quantity_type: str = "DOLLAR",
+    client_order_id: Optional[str] = None,
+) -> dict:
+    """
+    Preview a mutual fund order. Returns a previewId required by etrade_place_mf_order.
+
+    order_action: BUY, SELL, MF_EXCHANGE.
+    investment_amount: dollar amount to invest/redeem (use with quantity_type=DOLLAR).
+    quantity: share count (use with quantity_type=QUANTITY) or omit for dollar-based orders.
+    quantity_type: DOLLAR (default), QUANTITY, or ALL_I_OWN (full redemption).
+    price_type and order_term are always NET_ASSET_VALUE / GOOD_FOR_DAY for MF orders.
+    """
+    c = await _get_client()
+    return await _run(c.preview_mf_order, account_id_key,
+                      symbol=symbol, order_action=order_action,
+                      investment_amount=investment_amount, quantity=quantity,
+                      quantity_type=quantity_type, client_order_id=client_order_id)
+
+
+@mcp.tool()
+async def etrade_place_mf_order(
+    account_id_key: str,
+    symbol: str,
+    order_action: str,
+    client_order_id: str,
+    preview_id: int,
+    investment_amount: Optional[float] = None,
+    quantity: Optional[float] = None,
+    quantity_type: str = "DOLLAR",
+) -> dict:
+    """
+    Place a previewed mutual fund order. Call etrade_preview_mf_order first.
+
+    client_order_id and preview_id must match the values from etrade_preview_mf_order.
+    All other fields must match the preview exactly.
+    """
+    c = await _get_client()
+    return await _run(c.place_mf_order, account_id_key,
+                      symbol=symbol, order_action=order_action,
+                      investment_amount=investment_amount, quantity=quantity,
+                      quantity_type=quantity_type, client_order_id=client_order_id,
+                      preview_id=preview_id)
+
+
+@mcp.tool()
 async def etrade_cancel_order(account_id_key: str, order_id: int) -> dict:
     """Cancel an open order by order ID."""
     c = await _get_client()
