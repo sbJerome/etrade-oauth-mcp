@@ -1,10 +1,10 @@
 # Release Notes
 
-## v0.1.0 — Live Production Build (2026-04-18)
+## v0.1.0-dev — Sandbox Build (2026-04-18)
 
-> **Status**: Development / Live testing  
-> **Branch**: `main`  
-> **Environment**: Live (`api.etrade.com`) — sandbox URL commented out, defaults to production
+> **Status**: Development / Sandbox testing  
+> **Branch**: `dev`  
+> **Environment**: Sandbox (`apisb.etrade.com`) — defaults to sandbox for safe testing
 
 ---
 
@@ -12,7 +12,7 @@
 
 - **Claude.ai** — connects via `/sse`, full OAuth 2.1 flow (Authorization Code + PKCE), PIN or Client ID + Secret approval, refresh tokens ✅
 - **ChatGPT / OpenAI** — connects via `/mcp` (Streamable-HTTP), OAuth 2.1 client credentials grant ✅
-- **E\*TRADE Live API** — account listing, balances, portfolio, quotes, option chains, order preview + placement, transactions, alerts ✅
+- **E\*TRADE Sandbox** — account listing, balances, portfolio, quotes, option chains, order preview + placement, transactions, alerts ✅
 - **OpenBao** — all credentials (API keys, access tokens, JWT secret, OAuth clients) stored and retrieved correctly ✅
 - **Helm** — deployed to K3s cluster, `etrade` namespace, LoadBalancer at `10.50.0.49:8767` ✅
 - **Cloudflare** — external access via `https://mcp.heimdallai.co` ✅
@@ -21,7 +21,7 @@
 
 ### Known Limitations
 
-- **Live trading not yet tested end-to-end** — server defaults to live mode, but full order placement in production needs verification
+- **Live trading not yet tested** — sandbox only on dev; promote to `main` for live (`api.etrade.com`) with sandbox URL commented out
 - **Gemini** — not yet tested
 - **Token auto-refresh** — clients must handle refresh token rotation; no server-side proactive renewal
 - **E\*TRADE OAuth 1.0a tokens** expire after 2 hours of inactivity — must call `etrade_renew_access_token()` or re-authorize
@@ -30,7 +30,7 @@
 
 ### Pre-Release Checklist
 
-- [ ] Test live E\*TRADE API end-to-end (defaults to live — verify auth + data)
+- [ ] Test live E\*TRADE API (`main` branch defaults to live — verify auth + data)
 - [ ] Test Gemini MCP connection
 - [ ] Test order placement end-to-end in live mode
 - [ ] Confirm refresh token rotation works across sessions

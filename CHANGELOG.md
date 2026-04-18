@@ -16,7 +16,7 @@ Complete rewrite of the E\*TRADE MCP server using the official E\*TRADE Python c
 #### Core Server (`mcp_server.py`)
 - Built on **FastMCP 1.27.0** with `uvicorn` as the ASGI server
 - **Dual transport**: SSE at `/sse` (Claude.ai) and Streamable-HTTP at `/mcp` (ChatGPT/OpenAI) served from the same port via `PathRouter`
-- Live mode default (`api.etrade.com`); sandbox URL (`apisb.etrade.com`) commented out in `etrade_client.py`
+- Sandbox mode default (`apisb.etrade.com`) on `dev`; live mode enabled via `--live` CLI flag or `etrade_set_sandbox(False)`
 - All E\*TRADE tools built against the **official OpenAPI spec** — no mobile/internal endpoints
 - `asyncio.to_thread()` wrapping for all synchronous rauth calls
 
@@ -67,7 +67,7 @@ Complete rewrite of the E\*TRADE MCP server using the official E\*TRADE Python c
 
 #### Helm Chart (`helm/etrade-oauth-mcp/`)
 - Deployment, Service, Secret templates
-- `sandbox` value controls `--live` flag (default: live mode)
+- `sandbox` value controls `--live` flag (default: sandbox mode on dev, live on main)
 - `mcpIssuer` value sets `MCP_ISSUER` environment variable for OAuth metadata
 - LoadBalancer service with static IP (`10.50.0.49`)
 - OpenBao credentials passed via Kubernetes Secret
@@ -90,7 +90,7 @@ Complete rewrite of the E\*TRADE MCP server using the official E\*TRADE Python c
 | Order quantities | `float` | `int` (E\*TRADE does not allow fractional shares) |
 | Credentials | Env vars / Kubernetes secret | OpenBao (sandbox + live paths separate) |
 | Mobile endpoints | Included (device spoofing) | Excluded (not in official spec) |
-| Default mode | Sandbox | Live (`api.etrade.com`) |
+| Sandbox | Separate deployment | Runtime flag (`etrade_set_sandbox()`) |
 
 ---
 
