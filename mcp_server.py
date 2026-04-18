@@ -374,7 +374,7 @@ async def etrade_preview_order(
 
     order_action: BUY, SELL, BUY_TO_COVER, SELL_SHORT, BUY_OPEN, BUY_CLOSE, SELL_OPEN, SELL_CLOSE.
     price_type: MARKET, LIMIT, STOP, STOP_LIMIT.
-    order_term: GOOD_FOR_DAY, IMMEDIATE_OR_CANCEL, FILL_OR_KILL, GOOD_TILL_CANCEL.
+    order_term: GOOD_FOR_DAY, IMMEDIATE_OR_CANCEL, FILL_OR_KILL, GOOD_UNTIL_CANCEL.
     security_type: EQ, OPTN, MF, ETF, BOND.
     market_session: REGULAR, EXTENDED.
     client_order_id: auto-generated if omitted; save it to use in etrade_place_order.
