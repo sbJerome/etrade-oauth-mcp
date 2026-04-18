@@ -5,7 +5,7 @@ One-time setup:
   1. etrade_authorize_start()  → open URL → approve → copy verifier
   2. etrade_authorize_complete(verifier)
 
-Switch environments with etrade_set_sandbox(True/False). Default: live.
+Switch environments with etrade_set_sandbox(True/False). Default: sandbox.
 """
 
 import asyncio
@@ -19,7 +19,7 @@ from mcp.server.fastmcp import FastMCP
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-_sandbox: bool = False
+_sandbox: bool = True
 _client = None
 _client_lock = asyncio.Lock()
 
@@ -62,8 +62,8 @@ mcp = FastMCP(
     "E*TRADE OAuth API",
     instructions=(
         "Official E*TRADE API via OAuth 1.0a. "
-        "Live (api.etrade.com) is active by default. "
-        "Call etrade_set_sandbox(True) to switch to sandbox (apisb.etrade.com). "
+        "Sandbox (apisb.etrade.com) is active by default. "
+        "Call etrade_set_sandbox(False) to switch to live (api.etrade.com). "
         "Credentials are stored in OpenBao — no manual key entry needed."
     ),
     host="0.0.0.0",
@@ -497,6 +497,11 @@ async def etrade_preview_mf_order(
     price_type and order_term are always NET_ASSET_VALUE / GOOD_FOR_DAY for MF orders.
     """
     c = await _get_client()
+    _fields = dict(symbol=symbol, order_action=order_action,
+                   investment_amount=investment_amount, quantity=quantity,
+                   quantity_type=quantity_type, client_order_id=client_order_id)
+    print(f"MF_DEBUG fields={_fields}", flush=True)
+    print(f"MF_DEBUG xml={c._mf_order_xml('PreviewOrderRequest', _fields)}", flush=True)
     return await _run(c.preview_mf_order, account_id_key,
                       symbol=symbol, order_action=order_action,
                       investment_amount=investment_amount, quantity=quantity,
