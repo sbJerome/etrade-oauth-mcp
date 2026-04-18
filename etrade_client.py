@@ -273,19 +273,34 @@ class ETradeClient:
 
         # Options instrument block
         if security_type == "OPTN":
-            call_or_put  = (fields.get("call_or_put") or "CALL").upper()
+            # Auto-parse OSI symbol: CHPT--260515C00007000 or CHPT  260515C00007000
+            underlying = symbol
+            call_or_put  = fields.get("call_or_put") or ""
             strike_price = fields.get("strike_price") or ""
-            expiry_date  = fields.get("expiry_date") or ""  # YYYY-MM-DD
             expiry_year = expiry_month = expiry_day = ""
-            if expiry_date:
+            expiry_date = fields.get("expiry_date") or ""
+
+            import re
+            osi = re.match(r'^([A-Z]+)\s*-*(\d{6})([CP])(\d{8})$', symbol.replace(" ", ""))
+            if osi:
+                underlying   = osi.group(1)
+                yymmdd       = osi.group(2)
+                expiry_year  = "20" + yymmdd[0:2]
+                expiry_month = yymmdd[2:4]
+                expiry_day   = yymmdd[4:6]
+                call_or_put  = "CALL" if osi.group(3) == "C" else "PUT"
+                strike_price = str(int(osi.group(4)) / 1000)
+            elif expiry_date:
                 parts = expiry_date.split("-")
                 if len(parts) == 3:
                     expiry_year, expiry_month, expiry_day = parts
+
+            call_or_put  = (call_or_put or "CALL").upper()
             quantity = int(fields.get("quantity") or 1)
             product_block = (
                 f"<Product>"
                 f"<securityType>OPTN</securityType>"
-                f"<symbol>{symbol}</symbol>"
+                f"<symbol>{underlying}</symbol>"
                 f"<callPut>{call_or_put}</callPut>"
                 f"<expiryYear>{expiry_year}</expiryYear>"
                 f"<expiryMonth>{expiry_month}</expiryMonth>"
@@ -295,10 +310,9 @@ class ETradeClient:
             )
             quantity_block = f"<quantityType>QUANTITY</quantityType><quantity>{quantity}</quantity>"
 
-        # Mutual fund — dollar amount, NET_ASSET_VALUE pricing, no stop/limit
+        # Mutual fund — dollar amount, MARKET pricing, no stop/limit
         elif security_type == "MF":
             investment_amount = fields.get("investment_amount") or fields.get("quantity") or 0
-            price_type = "NET_ASSET_VALUE"
             stop_price = ""
             limit_price = ""
             product_block = (
