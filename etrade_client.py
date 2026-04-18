@@ -273,15 +273,15 @@ class ETradeClient:
 
         # Options instrument block
         if security_type == "OPTN":
-            call_or_put  = fields.get("call_or_put", "CALL").upper()
-            strike_price = fields.get("strike_price", "")
-            expiry_date  = fields.get("expiry_date", "")  # YYYY-MM-DD
+            call_or_put  = (fields.get("call_or_put") or "CALL").upper()
+            strike_price = fields.get("strike_price") or ""
+            expiry_date  = fields.get("expiry_date") or ""  # YYYY-MM-DD
             expiry_year = expiry_month = expiry_day = ""
             if expiry_date:
                 parts = expiry_date.split("-")
                 if len(parts) == 3:
                     expiry_year, expiry_month, expiry_day = parts
-            quantity = int(fields.get("quantity", 1))
+            quantity = int(fields.get("quantity") or 1)
             product_block = (
                 f"<Product>"
                 f"<securityType>OPTN</securityType>"
@@ -295,9 +295,12 @@ class ETradeClient:
             )
             quantity_block = f"<quantityType>QUANTITY</quantityType><quantity>{quantity}</quantity>"
 
-        # Mutual fund instrument block — dollar amount instead of share count
+        # Mutual fund — dollar amount, NET_ASSET_VALUE pricing, no stop/limit
         elif security_type == "MF":
-            investment_amount = fields.get("investment_amount") or fields.get("quantity", 0)
+            investment_amount = fields.get("investment_amount") or fields.get("quantity") or 0
+            price_type = "NET_ASSET_VALUE"
+            stop_price = ""
+            limit_price = ""
             product_block = (
                 f"<Product>"
                 f"<securityType>MF</securityType>"

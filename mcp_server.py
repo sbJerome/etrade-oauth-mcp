@@ -388,7 +388,7 @@ async def etrade_preview_order(
     strike_price: option strike price.
     quantity: number of contracts.
     --- Mutual Funds (security_type=MF) ---
-    investment_amount: dollar amount to invest (replaces quantity).
+    investment_amount: dollar amount to invest (replaces quantity). Price type auto-set to NET_ASSET_VALUE.
     """
     if security_type == "ETF":
         security_type = "EQ"
