@@ -358,59 +358,6 @@ class ETradeClient:
             headers=self._xml_headers(),
         ))
 
-    def _mf_order_json(self, request_key: str, fields: dict) -> dict:
-        client_order_id   = fields.get("client_order_id") or str(random.randint(1000000000, 9999999999))
-        symbol            = fields["symbol"]
-        mf_transaction    = (fields.get("order_action") or "BUY").upper()
-        quantity_type     = fields.get("quantity_type", "DOLLAR").upper()
-        investment_amount = fields.get("investment_amount") or fields.get("quantity") or 0
-        reinvest_option   = fields.get("reinvest_option", "REINVEST").upper()
-
-        payload: dict = {
-            request_key: {
-                "orderType": "MF",
-                "clientOrderId": client_order_id,
-                "Order": {
-                    "allOrNone": "false",
-                    "priceType": "MARKET",
-                    "orderTerm": "GOOD_FOR_DAY",
-                    "marketSession": "REGULAR",
-                    "Instrument": {
-                        "Product": {"securityType": "MF", "symbol": symbol},
-                        "mfTransaction": mf_transaction,
-                        "mfQuantity": str(investment_amount),
-                        "quantityType": quantity_type,
-                        "reInvestOption": reinvest_option,
-                    },
-                },
-            }
-        }
-
-        if request_key == "PlaceOrderRequest":
-            preview_id = fields.get("preview_id")
-            client_oid = fields.get("client_order_id", client_order_id)
-            if preview_id:
-                payload[request_key]["PreviewIds"] = {"previewId": preview_id}
-                payload[request_key]["clientOrderId"] = client_oid
-
-        return payload
-
-    def preview_mf_order(self, account_id_key: str, **fields) -> dict:
-        """POST /v1/accounts/{accountIdKey}/orders/preview.json — mutual fund"""
-        payload = self._mf_order_json("PreviewOrderRequest", fields)
-        logger.info("MF preview JSON: %s", payload)
-        r = self._post(f"/v1/accounts/{account_id_key}/orders/preview.json", json=payload)
-        logger.info("MF preview response [%d]: %s", r.status_code, r.text)
-        return self._parse(r)
-
-    def place_mf_order(self, account_id_key: str, **fields) -> dict:
-        """POST /v1/accounts/{accountIdKey}/orders/place.json — mutual fund"""
-        payload = self._mf_order_json("PlaceOrderRequest", fields)
-        logger.info("MF place JSON: %s", payload)
-        r = self._post(f"/v1/accounts/{account_id_key}/orders/place.json", json=payload)
-        logger.info("MF place response [%d]: %s", r.status_code, r.text)
-        return self._parse(r)
-
     def cancel_order(self, account_id_key: str, order_id: int) -> dict:
         """PUT /v1/accounts/{accountIdKey}/orders/cancel"""
         xml = f"<CancelOrderRequest><orderId>{order_id}</orderId></CancelOrderRequest>"
