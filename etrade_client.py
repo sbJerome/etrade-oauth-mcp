@@ -14,7 +14,7 @@ from rauth import OAuth1Service, OAuth1Session
 logger = logging.getLogger(__name__)
 
 PROD_BASE    = "https://api.etrade.com"
-SANDBOX_BASE = "https://apisb.etrade.com"  # sandbox — use PROD_BASE for live  # sandbox — use PROD_BASE for live
+SANDBOX_BASE = "https://apisb.etrade.com"  # sandbox — use PROD_BASE for live
 AUTH_BASE  = "https://api.etrade.com"   # OAuth dance always targets prod
 AUTHORIZE_URL = "https://us.etrade.com/e/t/etws/authorize?key={}&token={}"
 
