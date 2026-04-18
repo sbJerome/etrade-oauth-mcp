@@ -31,7 +31,7 @@ AI Client (Claude / ChatGPT / Gemini)
              │  OAuth 1.0a (rauth)
              ▼
    ┌─────────────────────┐
-   │  E*TRADE API        │  api.etrade.com / apisb.etrade.com
+   │  E*TRADE API        │  api.etrade.com (live, default)
    │  (etrade_client.py) │
    └─────────────────────┘
              │
@@ -190,7 +190,7 @@ helm upgrade --install etrade-oauth-mcp ./helm/etrade-oauth-mcp \
 | `image.repository` | `localhost/etrade-oauth-mcp` | Container image |
 | `image.tag` | `latest` | Image tag |
 | `port` | `8767` | Server port |
-| `sandbox` | `true` | Start in sandbox mode |
+| `sandbox` | `false` | Start in sandbox mode (default: live) |
 | `mcpIssuer` | `""` | External URL (required for OAuth) |
 | `openbao.addr` | cluster internal | OpenBao address |
 | `openbao.token` | `""` | Static token (or use roleId + secretId) |
@@ -233,4 +233,4 @@ kubectl rollout restart deployment/etrade-oauth-mcp -n etrade
 - All order placements require a preview step first (`etrade_preview_order`)
 - OAuth 1.0a tokens expire after 2 hours of inactivity — use `etrade_renew_access_token()`
 - Mobile/internal E\*TRADE endpoints are intentionally excluded (not in official spec)
-- Sandbox (`apisb.etrade.com`) is the default mode; switch with `etrade_set_sandbox(False)`
+- Live (`api.etrade.com`) is the default mode; sandbox URL (`apisb.etrade.com`) is commented out — switch with `etrade_set_sandbox(True)` if needed
