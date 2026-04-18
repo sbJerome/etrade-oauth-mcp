@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: etrade-oauth-mcp
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: etrade-oauth-mcp
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: etrade-oauth-mcp
+        app.kubernetes.io/instance: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: mcp
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - python
+            - mcp_server.py
+            - --transport
+            - sse
+            - --port
+            - {{ .Values.port | quote }}
+            {{- if not .Values.sandbox }}
+            - --live
+            {{- end }}
+          ports:
+            - name: mcp
+              containerPort: {{ .Values.port }}
+              protocol: TCP
+          env:
+            {{- range $key := list "BAO_ADDR" "BAO_TOKEN" "BAO_ROLE_ID" "BAO_SECRET_ID" }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $.Release.Name }}-config
+                  key: {{ $key }}
+            {{- end }}
+            {{- if .Values.mcpIssuer }}
+            - name: MCP_ISSUER
+              value: {{ .Values.mcpIssuer | quote }}
+            {{- end }}
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.port }}
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

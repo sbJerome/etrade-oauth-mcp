@@ -1,0 +1,19 @@
+services:
+  etrade-oauth-mcp:
+    build: .
+    image: etrade-oauth-mcp:latest
+    container_name: etrade-oauth-mcp
+    restart: unless-stopped
+    command: python mcp_server.py --transport sse --port 8767
+    ports:
+      - "8767:8767"
+    environment:
+      BAO_ADDR: ${BAO_ADDR:-http://openbao-service.services.svc.cluster.local}
+      BAO_TOKEN: ${BAO_TOKEN:-}
+      BAO_ROLE_ID: ${BAO_ROLE_ID:-}
+      BAO_SECRET_ID: ${BAO_SECRET_ID:-}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8767/sse', timeout=2)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3

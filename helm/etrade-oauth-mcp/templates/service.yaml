@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app.kubernetes.io/name: etrade-oauth-mcp
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  type: {{ .Values.service.type }}
+  {{- if .Values.service.loadBalancerIP }}
+  loadBalancerIP: {{ .Values.service.loadBalancerIP }}
+  {{- end }}
+  selector:
+    app.kubernetes.io/name: etrade-oauth-mcp
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: mcp
+      port: {{ .Values.port }}
+      targetPort: {{ .Values.port }}
+      protocol: TCP

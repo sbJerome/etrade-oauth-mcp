@@ -1,0 +1,30 @@
+image:
+  repository: localhost/etrade-oauth-mcp
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicas: 1
+port: 8767
+sandbox: true   # start in sandbox mode; switch via etrade_set_sandbox(False) tool call
+
+openbao:
+  addr: "http://openbao-service.services.svc.cluster.local"
+  token: ""
+  roleId: ""
+  secretId: ""
+
+service:
+  type: LoadBalancer
+  loadBalancerIP: "10.50.0.49"   # next available IP after .47 and .48
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
+
+namespace: etrade
+
+mcpIssuer: ""   # External URL, e.g. https://etrade-mcp.yourdomain.com (set via --set or override values)
