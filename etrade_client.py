@@ -359,11 +359,12 @@ class ETradeClient:
         ))
 
     def _mf_order_xml(self, tag: str, fields: dict) -> str:
-        client_order_id  = fields.get("client_order_id") or str(random.randint(1000000000, 9999999999))
-        symbol           = fields["symbol"]
-        order_action     = fields["order_action"]
-        quantity_type    = fields.get("quantity_type", "DOLLAR").upper()
+        client_order_id   = fields.get("client_order_id") or str(random.randint(1000000000, 9999999999))
+        symbol            = fields["symbol"]
+        mf_transaction    = (fields.get("order_action") or "BUY").upper()
+        quantity_type     = fields.get("quantity_type", "DOLLAR").upper()
         investment_amount = fields.get("investment_amount") or fields.get("quantity") or 0
+        reinvest_option   = fields.get("reinvest_option", "REINVEST").upper()
 
         preview_block = ""
         if tag == "PlaceOrderRequest":
@@ -378,13 +379,15 @@ class ETradeClient:
             f"{preview_block}"
             f"<Order>"
             f"<allOrNone>false</allOrNone>"
+            f"<priceType>NET_ASSET_VALUE</priceType>"
             f"<orderTerm>GOOD_FOR_DAY</orderTerm>"
             f"<marketSession>REGULAR</marketSession>"
             f"<Instrument>"
             f"<Product><securityType>MF</securityType><symbol>{symbol}</symbol></Product>"
-            f"<orderAction>{order_action}</orderAction>"
+            f"<mfTransaction>{mf_transaction}</mfTransaction>"
+            f"<mfQuantity>{investment_amount}</mfQuantity>"
             f"<quantityType>{quantity_type}</quantityType>"
-            f"<quantity>{investment_amount}</quantity>"
+            f"<reInvestOption>{reinvest_option}</reInvestOption>"
             f"</Instrument>"
             f"</Order>"
             f"</{tag}>"
