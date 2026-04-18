@@ -395,19 +395,21 @@ class ETradeClient:
 
     def preview_mf_order(self, account_id_key: str, **fields) -> dict:
         """POST /v1/accounts/{accountIdKey}/orders/preview — mutual fund"""
-        return self._parse(self._post(
-            f"/v1/accounts/{account_id_key}/orders/preview",
-            data=self._mf_order_xml("PreviewOrderRequest", fields),
-            headers=self._xml_headers(),
-        ))
+        xml = self._mf_order_xml("PreviewOrderRequest", fields)
+        logger.info("MF preview XML: %s", xml)
+        r = self._post(f"/v1/accounts/{account_id_key}/orders/preview",
+                       data=xml, headers=self._xml_headers())
+        logger.info("MF preview response [%d]: %s", r.status_code, r.text)
+        return self._parse(r)
 
     def place_mf_order(self, account_id_key: str, **fields) -> dict:
         """POST /v1/accounts/{accountIdKey}/orders/place — mutual fund"""
-        return self._parse(self._post(
-            f"/v1/accounts/{account_id_key}/orders/place",
-            data=self._mf_order_xml("PlaceOrderRequest", fields),
-            headers=self._xml_headers(),
-        ))
+        xml = self._mf_order_xml("PlaceOrderRequest", fields)
+        logger.info("MF place XML: %s", xml)
+        r = self._post(f"/v1/accounts/{account_id_key}/orders/place",
+                       data=xml, headers=self._xml_headers())
+        logger.info("MF place response [%d]: %s", r.status_code, r.text)
+        return self._parse(r)
 
     def cancel_order(self, account_id_key: str, order_id: int) -> dict:
         """PUT /v1/accounts/{accountIdKey}/orders/cancel"""
