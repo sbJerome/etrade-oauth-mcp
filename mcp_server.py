@@ -23,6 +23,21 @@ _sandbox: bool = True
 _client = None
 _client_lock = asyncio.Lock()
 
+_KEEPALIVE_INTERVAL = 90 * 60  # 90 minutes — E*TRADE tokens expire after 2h of inactivity
+
+
+async def _keepalive_loop():
+    """Renew the E*TRADE OAuth token every 90 minutes while a session is active."""
+    while True:
+        await asyncio.sleep(_KEEPALIVE_INTERVAL)
+        if _client is None:
+            continue
+        try:
+            result = await _run(_client.renew_access_token)
+            logger.info("Keep-alive: token renewed — %s", result)
+        except Exception as e:
+            logger.warning("Keep-alive: renewal failed — %s", e)
+
 
 async def _get_client():
     global _client
@@ -737,6 +752,7 @@ if __name__ == "__main__":
                 async with anyio.create_task_group() as tg:
                     tg.start_soon(sse_app,  scope, sse_rx.receive,  sse_send)
                     tg.start_soon(http_app, scope, http_rx.receive, http_send)
+                    tg.start_soon(_keepalive_loop)
 
                     await receive()                                        # lifespan.startup
                     await sse_tx.send({"type": "lifespan.startup"})
