@@ -31,7 +31,7 @@ AI Client (Claude / ChatGPT / Gemini)
              │  OAuth 1.0a (rauth)
              ▼
    ┌─────────────────────┐
-   │  E*TRADE API        │  api.etrade.com (live — default on main)
+   │  E*TRADE API        │  api.etrade.com / apisb.etrade.com
    │  (etrade_client.py) │
    └─────────────────────┘
              │
@@ -190,7 +190,7 @@ helm upgrade --install etrade-oauth-mcp ./helm/etrade-oauth-mcp \
 | `image.repository` | `localhost/etrade-oauth-mcp` | Container image |
 | `image.tag` | `latest` | Image tag |
 | `port` | `8767` | Server port |
-| `sandbox` | `false` | Start in sandbox mode (default: live) |
+| `sandbox` | `true` | Start in sandbox mode (default on dev) |
 | `mcpIssuer` | `""` | External URL (required for OAuth) |
 | `openbao.addr` | cluster internal | OpenBao address |
 | `openbao.token` | `""` | Static token (or use roleId + secretId) |
@@ -233,4 +233,13 @@ kubectl rollout restart deployment/etrade-oauth-mcp -n etrade
 - All order placements require a preview step first (`etrade_preview_order`)
 - OAuth 1.0a tokens expire after 2 hours of inactivity — use `etrade_renew_access_token()`
 - Mobile/internal E\*TRADE endpoints are intentionally excluded (not in official spec)
-- Live (`api.etrade.com`) is the default on `main`; sandbox URL commented out — switch with `etrade_set_sandbox(True)` if needed
+- Sandbox (`apisb.etrade.com`) is the default mode on `dev`; switch with `etrade_set_sandbox(False)` for live
+- Mutual fund order placement is not supported by the E\*TRADE public API — place MF orders through the E\*TRADE website
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+> **E\*TRADE API Disclaimer**: This project is an independent open-source tool and is not affiliated with, endorsed by, or sponsored by E\*TRADE Financial Corporation. Use of this software requires your own E\*TRADE developer account and agreement to [E\*TRADE's API Terms of Service](https://developer.etrade.com/home). You are solely responsible for compliance with those terms and for any trading activity conducted through this tool.
