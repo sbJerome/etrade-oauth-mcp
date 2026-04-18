@@ -344,7 +344,7 @@ async def etrade_list_orders(
     List orders for an account (max 100 per page).
     status: OPEN, EXECUTED, CANCELLED, INDIVIDUAL_FILLS, CANCEL_REQUESTED, EXPIRED, REJECTED.
     from_date / to_date: MMDDYYYY format.
-    security_type: EQ, OPTN, MF, MMF.
+    security_type: EQ (includes ETFs), OPTN, MF, MMF.
     transaction_type: BUY, SELL, SELL_SHORT, BUY_TO_COVER, MF_EXCHANGE.
     market_session: REGULAR, EXTENDED.
     marker: pagination cursor from previous response.
@@ -375,10 +375,12 @@ async def etrade_preview_order(
     order_action: BUY, SELL, BUY_TO_COVER, SELL_SHORT, BUY_OPEN, BUY_CLOSE, SELL_OPEN, SELL_CLOSE.
     price_type: MARKET, LIMIT, STOP, STOP_LIMIT.
     order_term: GOOD_FOR_DAY, IMMEDIATE_OR_CANCEL, FILL_OR_KILL, GOOD_UNTIL_CANCEL.
-    security_type: EQ, OPTN, MF, ETF, BOND.
+    security_type: EQ (stocks and ETFs), OPTN, MF, BOND. Note: ETFs must use EQ.
     market_session: REGULAR, EXTENDED.
     client_order_id: auto-generated if omitted; save it to use in etrade_place_order.
     """
+    if security_type == "ETF":
+        security_type = "EQ"
     c = await _get_client()
     return await _run(c.preview_order, account_id_key,
                       symbol=symbol, order_action=order_action, quantity=quantity,
@@ -408,7 +410,10 @@ async def etrade_place_order(
     client_order_id: must match the value used in etrade_preview_order.
     preview_id: the previewId returned by etrade_preview_order.
     All other fields must match the preview exactly.
+    security_type: EQ (stocks and ETFs), OPTN, MF, BOND. Note: ETFs must use EQ.
     """
+    if security_type == "ETF":
+        security_type = "EQ"
     c = await _get_client()
     return await _run(c.place_order, account_id_key,
                       symbol=symbol, order_action=order_action, quantity=quantity,
