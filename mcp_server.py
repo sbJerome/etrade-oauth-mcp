@@ -392,7 +392,7 @@ async def etrade_preview_order(
     order_action: BUY, SELL, BUY_TO_COVER, SELL_SHORT, BUY_OPEN, BUY_CLOSE, SELL_OPEN, SELL_CLOSE.
     price_type: MARKET, LIMIT, STOP, STOP_LIMIT.
     order_term: GOOD_FOR_DAY, IMMEDIATE_OR_CANCEL, FILL_OR_KILL, GOOD_UNTIL_CANCEL.
-    security_type: EQ (stocks and ETFs), OPTN, MF, BOND. Note: ETFs must use EQ.
+    security_type: EQ (stocks and ETFs), OPTN, BOND. Note: ETFs must use EQ. MF order placement is not supported by the E*TRADE public API.
     market_session: REGULAR, EXTENDED.
     client_order_id: auto-generated if omitted; save it to use in etrade_place_order.
     --- Options (security_type=OPTN) ---
@@ -400,17 +400,12 @@ async def etrade_preview_order(
     expiry_date: option expiry date as YYYY-MM-DD.
     strike_price: option strike price.
     quantity: number of contracts.
-    --- Mutual Funds (security_type=MF) ---
-    investment_amount: dollar amount to invest (replaces quantity). Use etrade_preview_mf_order for MF orders.
     """
     if security_type == "ETF":
         security_type = "EQ"
-    c = await _get_client()
     if security_type == "MF":
-        return await _run(c.preview_mf_order, account_id_key,
-                          symbol=symbol, order_action=order_action,
-                          investment_amount=investment_amount, quantity=quantity,
-                          client_order_id=client_order_id)
+        return {"error": "MF order placement is not supported by the E*TRADE public API. Place mutual fund orders through the E*TRADE website."}
+    c = await _get_client()
     return await _run(c.preview_order, account_id_key,
                       symbol=symbol, order_action=order_action, quantity=quantity,
                       price_type=price_type, limit_price=limit_price, stop_price=stop_price,
@@ -440,7 +435,7 @@ async def etrade_place_order(
     """
     Preview and place an order in one step.
 
-    security_type: EQ (stocks and ETFs), OPTN, BOND. Note: ETFs must use EQ. Use etrade_place_mf_order for mutual funds.
+    security_type: EQ (stocks and ETFs), OPTN, BOND. Note: ETFs must use EQ. MF order placement is not supported by the E*TRADE public API.
     order_action: BUY, SELL, BUY_TO_COVER, SELL_SHORT, BUY_OPEN, BUY_CLOSE, SELL_OPEN, SELL_CLOSE.
     price_type: MARKET, LIMIT, STOP, STOP_LIMIT.
     order_term: GOOD_FOR_DAY, IMMEDIATE_OR_CANCEL, FILL_OR_KILL, GOOD_UNTIL_CANCEL.
@@ -452,10 +447,7 @@ async def etrade_place_order(
     if security_type == "ETF":
         security_type = "EQ"
     if security_type == "MF":
-        return await etrade_place_mf_order(account_id_key, symbol=symbol,
-                                           order_action=order_action,
-                                           investment_amount=investment_amount,
-                                           quantity=quantity)
+        return {"error": "MF order placement is not supported by the E*TRADE public API. Place mutual fund orders through the E*TRADE website."}
     c = await _get_client()
     preview = await _run(c.preview_order, account_id_key,
                          symbol=symbol, order_action=order_action, quantity=quantity,
@@ -474,70 +466,6 @@ async def etrade_place_order(
                       market_session=market_session, call_or_put=call_or_put,
                       expiry_date=expiry_date, strike_price=strike_price,
                       investment_amount=investment_amount,
-                      client_order_id=client_order_id, preview_id=preview_id)
-
-
-@mcp.tool()
-async def etrade_preview_mf_order(
-    account_id_key: str,
-    symbol: str,
-    order_action: str,
-    investment_amount: Optional[float] = None,
-    quantity: Optional[float] = None,
-    quantity_type: str = "DOLLAR",
-    client_order_id: Optional[str] = None,
-) -> dict:
-    """
-    Preview a mutual fund order. Returns a previewId required by etrade_place_mf_order.
-
-    order_action: BUY, SELL, MF_EXCHANGE.
-    investment_amount: dollar amount to invest/redeem (use with quantity_type=DOLLAR).
-    quantity: share count (use with quantity_type=QUANTITY) or omit for dollar-based orders.
-    quantity_type: DOLLAR (default), QUANTITY, or ALL_I_OWN (full redemption).
-    price_type and order_term are always NET_ASSET_VALUE / GOOD_FOR_DAY for MF orders.
-    """
-    c = await _get_client()
-    _fields = dict(symbol=symbol, order_action=order_action,
-                   investment_amount=investment_amount, quantity=quantity,
-                   quantity_type=quantity_type, client_order_id=client_order_id)
-    print(f"MF_DEBUG fields={_fields}", flush=True)
-    print(f"MF_DEBUG json={c._mf_order_json('PreviewOrderRequest', _fields)}", flush=True)
-    return await _run(c.preview_mf_order, account_id_key,
-                      symbol=symbol, order_action=order_action,
-                      investment_amount=investment_amount, quantity=quantity,
-                      quantity_type=quantity_type, client_order_id=client_order_id)
-
-
-@mcp.tool()
-async def etrade_place_mf_order(
-    account_id_key: str,
-    symbol: str,
-    order_action: str,
-    investment_amount: Optional[float] = None,
-    quantity: Optional[float] = None,
-    quantity_type: str = "DOLLAR",
-) -> dict:
-    """
-    Preview and place a mutual fund order in one step.
-
-    order_action: BUY, SELL, MF_EXCHANGE.
-    investment_amount: dollar amount to invest/redeem (use with quantity_type=DOLLAR).
-    quantity: share count (use with quantity_type=QUANTITY).
-    quantity_type: DOLLAR (default), QUANTITY, or ALL_I_OWN (full redemption).
-    price_type and order_term are always NET_ASSET_VALUE / GOOD_FOR_DAY.
-    """
-    c = await _get_client()
-    preview = await _run(c.preview_mf_order, account_id_key,
-                         symbol=symbol, order_action=order_action,
-                         investment_amount=investment_amount, quantity=quantity,
-                         quantity_type=quantity_type)
-    preview_id, client_order_id = _extract_preview(preview)
-    if preview_id is None:
-        return {"error": "Preview failed", "preview_response": preview}
-    return await _run(c.place_mf_order, account_id_key,
-                      symbol=symbol, order_action=order_action,
-                      investment_amount=investment_amount, quantity=quantity,
-                      quantity_type=quantity_type,
                       client_order_id=client_order_id, preview_id=preview_id)
 
 
