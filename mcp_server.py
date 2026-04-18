@@ -19,7 +19,7 @@ from mcp.server.fastmcp import FastMCP
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-_sandbox: bool = True
+_sandbox: bool = False
 _client = None
 _client_lock = asyncio.Lock()
 
