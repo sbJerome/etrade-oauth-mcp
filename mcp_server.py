@@ -497,6 +497,11 @@ async def etrade_preview_mf_order(
     price_type and order_term are always NET_ASSET_VALUE / GOOD_FOR_DAY for MF orders.
     """
     c = await _get_client()
+    _fields = dict(symbol=symbol, order_action=order_action,
+                   investment_amount=investment_amount, quantity=quantity,
+                   quantity_type=quantity_type, client_order_id=client_order_id)
+    print(f"MF_DEBUG fields={_fields}", flush=True)
+    print(f"MF_DEBUG xml={c._mf_order_xml('PreviewOrderRequest', _fields)}", flush=True)
     return await _run(c.preview_mf_order, account_id_key,
                       symbol=symbol, order_action=order_action,
                       investment_amount=investment_amount, quantity=quantity,
