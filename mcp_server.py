@@ -627,14 +627,56 @@ if __name__ == "__main__":
         http_app = mcp.streamable_http_app()
 
         class PathRouter:
-            """Routes /mcp to streamable-http, everything else to SSE."""
+            """Routes /mcp to streamable-http, everything else to SSE.
+            Properly runs both app lifespans concurrently so the
+            streamable-http session manager's TaskGroup initializes."""
+
             async def __call__(self, scope, receive, send):
                 if scope["type"] == "lifespan":
-                    await sse_app(scope, receive, send)
+                    await self._dual_lifespan(scope, receive, send)
                 elif scope.get("path", "").startswith("/mcp"):
                     await http_app(scope, receive, send)
                 else:
                     await sse_app(scope, receive, send)
+
+            async def _dual_lifespan(self, scope, receive, send):
+                import anyio
+                from anyio.streams.memory import MemoryObjectSendStream, MemoryObjectReceiveStream
+
+                sse_tx,  sse_rx  = anyio.create_memory_object_stream(10)
+                http_tx, http_rx = anyio.create_memory_object_stream(10)
+
+                sse_up   = anyio.Event()
+                http_up  = anyio.Event()
+                sse_down = anyio.Event()
+                http_down = anyio.Event()
+
+                async def sse_send(msg):
+                    if msg["type"] == "lifespan.startup.complete":   sse_up.set()
+                    if msg["type"] == "lifespan.shutdown.complete":  sse_down.set()
+
+                async def http_send(msg):
+                    if msg["type"] == "lifespan.startup.complete":   http_up.set()
+                    if msg["type"] == "lifespan.shutdown.complete":  http_down.set()
+
+                async with anyio.create_task_group() as tg:
+                    tg.start_soon(sse_app,  scope, sse_rx.receive,  sse_send)
+                    tg.start_soon(http_app, scope, http_rx.receive, http_send)
+
+                    await receive()                                        # lifespan.startup
+                    await sse_tx.send({"type": "lifespan.startup"})
+                    await http_tx.send({"type": "lifespan.startup"})
+                    await sse_up.wait()
+                    await http_up.wait()
+                    await send({"type": "lifespan.startup.complete"})
+
+                    await receive()                                        # lifespan.shutdown
+                    await sse_tx.send({"type": "lifespan.shutdown"})
+                    await http_tx.send({"type": "lifespan.shutdown"})
+                    await sse_down.wait()
+                    await http_down.wait()
+                    await send({"type": "lifespan.shutdown.complete"})
+                    tg.cancel_scope.cancel()
 
         router = PathRouter()
         router_with_auth = BearerAuthMiddleware(app=router)
