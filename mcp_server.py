@@ -360,7 +360,7 @@ async def etrade_preview_order(
     account_id_key: str,
     symbol: str,
     order_action: str,
-    quantity: int,
+    quantity: Optional[int] = None,
     price_type: str = "MARKET",
     limit_price: Optional[float] = None,
     stop_price: Optional[float] = None,
@@ -368,6 +368,10 @@ async def etrade_preview_order(
     security_type: str = "EQ",
     market_session: str = "REGULAR",
     client_order_id: Optional[str] = None,
+    call_or_put: Optional[str] = None,
+    expiry_date: Optional[str] = None,
+    strike_price: Optional[float] = None,
+    investment_amount: Optional[float] = None,
 ) -> dict:
     """
     Preview an order. Returns a previewId required by etrade_place_order.
@@ -378,6 +382,13 @@ async def etrade_preview_order(
     security_type: EQ (stocks and ETFs), OPTN, MF, BOND. Note: ETFs must use EQ.
     market_session: REGULAR, EXTENDED.
     client_order_id: auto-generated if omitted; save it to use in etrade_place_order.
+    --- Options (security_type=OPTN) ---
+    call_or_put: CALL or PUT.
+    expiry_date: option expiry date as YYYY-MM-DD.
+    strike_price: option strike price.
+    quantity: number of contracts.
+    --- Mutual Funds (security_type=MF) ---
+    investment_amount: dollar amount to invest (replaces quantity). Price type auto-set to NET_ASSET_VALUE.
     """
     if security_type == "ETF":
         security_type = "EQ"
@@ -386,7 +397,9 @@ async def etrade_preview_order(
                       symbol=symbol, order_action=order_action, quantity=quantity,
                       price_type=price_type, limit_price=limit_price, stop_price=stop_price,
                       order_term=order_term, security_type=security_type,
-                      market_session=market_session, client_order_id=client_order_id)
+                      market_session=market_session, client_order_id=client_order_id,
+                      call_or_put=call_or_put, expiry_date=expiry_date,
+                      strike_price=strike_price, investment_amount=investment_amount)
 
 
 @mcp.tool()
@@ -394,15 +407,19 @@ async def etrade_place_order(
     account_id_key: str,
     symbol: str,
     order_action: str,
-    quantity: int,
     client_order_id: str,
     preview_id: int,
+    quantity: Optional[int] = None,
     price_type: str = "MARKET",
     limit_price: Optional[float] = None,
     stop_price: Optional[float] = None,
     order_term: str = "GOOD_FOR_DAY",
     security_type: str = "EQ",
     market_session: str = "REGULAR",
+    call_or_put: Optional[str] = None,
+    expiry_date: Optional[str] = None,
+    strike_price: Optional[float] = None,
+    investment_amount: Optional[float] = None,
 ) -> dict:
     """
     Place a previewed order. Call etrade_preview_order first.
@@ -411,6 +428,12 @@ async def etrade_place_order(
     preview_id: the previewId returned by etrade_preview_order.
     All other fields must match the preview exactly.
     security_type: EQ (stocks and ETFs), OPTN, MF, BOND. Note: ETFs must use EQ.
+    --- Options (security_type=OPTN) ---
+    call_or_put: CALL or PUT.
+    expiry_date: option expiry date as YYYY-MM-DD.
+    strike_price: option strike price.
+    --- Mutual Funds (security_type=MF) ---
+    investment_amount: dollar amount (replaces quantity).
     """
     if security_type == "ETF":
         security_type = "EQ"
@@ -420,7 +443,9 @@ async def etrade_place_order(
                       client_order_id=client_order_id, preview_id=preview_id,
                       price_type=price_type, limit_price=limit_price, stop_price=stop_price,
                       order_term=order_term, security_type=security_type,
-                      market_session=market_session)
+                      market_session=market_session,
+                      call_or_put=call_or_put, expiry_date=expiry_date,
+                      strike_price=strike_price, investment_amount=investment_amount)
 
 
 @mcp.tool()
@@ -436,7 +461,7 @@ async def etrade_change_order_preview(
     order_id: int,
     symbol: str,
     order_action: str,
-    quantity: int,
+    quantity: Optional[int] = None,
     price_type: str = "MARKET",
     limit_price: Optional[float] = None,
     stop_price: Optional[float] = None,
@@ -444,14 +469,22 @@ async def etrade_change_order_preview(
     security_type: str = "EQ",
     market_session: str = "REGULAR",
     client_order_id: Optional[str] = None,
+    call_or_put: Optional[str] = None,
+    expiry_date: Optional[str] = None,
+    strike_price: Optional[float] = None,
+    investment_amount: Optional[float] = None,
 ) -> dict:
     """Preview a change to an existing open order. Returns a previewId for etrade_change_order_place."""
+    if security_type == "ETF":
+        security_type = "EQ"
     c = await _get_client()
     return await _run(c.change_order_preview, account_id_key, order_id,
                       symbol=symbol, order_action=order_action, quantity=quantity,
                       price_type=price_type, limit_price=limit_price, stop_price=stop_price,
                       order_term=order_term, security_type=security_type,
-                      market_session=market_session, client_order_id=client_order_id)
+                      market_session=market_session, client_order_id=client_order_id,
+                      call_or_put=call_or_put, expiry_date=expiry_date,
+                      strike_price=strike_price, investment_amount=investment_amount)
 
 
 @mcp.tool()
@@ -460,24 +493,32 @@ async def etrade_change_order_place(
     order_id: int,
     symbol: str,
     order_action: str,
-    quantity: int,
     client_order_id: str,
     preview_id: int,
+    quantity: Optional[int] = None,
     price_type: str = "MARKET",
     limit_price: Optional[float] = None,
     stop_price: Optional[float] = None,
     order_term: str = "GOOD_FOR_DAY",
     security_type: str = "EQ",
     market_session: str = "REGULAR",
+    call_or_put: Optional[str] = None,
+    expiry_date: Optional[str] = None,
+    strike_price: Optional[float] = None,
+    investment_amount: Optional[float] = None,
 ) -> dict:
     """Apply a previewed change to an existing open order."""
+    if security_type == "ETF":
+        security_type = "EQ"
     c = await _get_client()
     return await _run(c.change_order_place, account_id_key, order_id,
                       symbol=symbol, order_action=order_action, quantity=quantity,
                       client_order_id=client_order_id, preview_id=preview_id,
                       price_type=price_type, limit_price=limit_price, stop_price=stop_price,
                       order_term=order_term, security_type=security_type,
-                      market_session=market_session)
+                      market_session=market_session,
+                      call_or_put=call_or_put, expiry_date=expiry_date,
+                      strike_price=strike_price, investment_amount=investment_amount)
 
 
 # ── MCP auth management ───────────────────────────────────────────────────────

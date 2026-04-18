@@ -14,7 +14,7 @@ from rauth import OAuth1Service, OAuth1Session
 logger = logging.getLogger(__name__)
 
 PROD_BASE    = "https://api.etrade.com"
-SANDBOX_BASE = "https://apisb.etrade.com"
+SANDBOX_BASE = "https://apisb.etrade.com"  # sandbox — use PROD_BASE for live
 AUTH_BASE  = "https://api.etrade.com"   # OAuth dance always targets prod
 AUTHORIZE_URL = "https://us.etrade.com/e/t/etws/authorize?key={}&token={}"
 
@@ -264,13 +264,61 @@ class ETradeClient:
         market_session  = fields.get("market_session", "REGULAR")
         symbol          = fields["symbol"]
         order_action    = fields["order_action"]
-        quantity        = int(fields["quantity"])
 
         preview_block = ""
         if tag == "PlaceOrderRequest":
             preview_id = fields.get("preview_id")
             if preview_id:
                 preview_block = f"<PreviewIds><previewId>{preview_id}</previewId></PreviewIds>"
+
+        # Options instrument block
+        if security_type == "OPTN":
+            call_or_put  = (fields.get("call_or_put") or "CALL").upper()
+            strike_price = fields.get("strike_price") or ""
+            expiry_date  = fields.get("expiry_date") or ""  # YYYY-MM-DD
+            expiry_year = expiry_month = expiry_day = ""
+            if expiry_date:
+                parts = expiry_date.split("-")
+                if len(parts) == 3:
+                    expiry_year, expiry_month, expiry_day = parts
+            quantity = int(fields.get("quantity") or 1)
+            product_block = (
+                f"<Product>"
+                f"<securityType>OPTN</securityType>"
+                f"<symbol>{symbol}</symbol>"
+                f"<callPut>{call_or_put}</callPut>"
+                f"<expiryYear>{expiry_year}</expiryYear>"
+                f"<expiryMonth>{expiry_month}</expiryMonth>"
+                f"<expiryDay>{expiry_day}</expiryDay>"
+                f"<strikePrice>{strike_price}</strikePrice>"
+                f"</Product>"
+            )
+            quantity_block = f"<quantityType>QUANTITY</quantityType><quantity>{quantity}</quantity>"
+
+        # Mutual fund — dollar amount, NET_ASSET_VALUE pricing, no stop/limit
+        elif security_type == "MF":
+            investment_amount = fields.get("investment_amount") or fields.get("quantity") or 0
+            price_type = "NET_ASSET_VALUE"
+            stop_price = ""
+            limit_price = ""
+            product_block = (
+                f"<Product>"
+                f"<securityType>MF</securityType>"
+                f"<symbol>{symbol}</symbol>"
+                f"</Product>"
+            )
+            quantity_block = f"<quantityType>DOLLAR</quantityType><quantity>{investment_amount}</quantity>"
+
+        # Equity / default
+        else:
+            quantity = int(fields["quantity"])
+            product_block = (
+                f"<Product>"
+                f"<securityType>{security_type}</securityType>"
+                f"<symbol>{symbol}</symbol>"
+                f"</Product>"
+            )
+            quantity_block = f"<quantityType>QUANTITY</quantityType><quantity>{quantity}</quantity>"
 
         return (
             f"<{tag}>"
@@ -285,10 +333,9 @@ class ETradeClient:
             f"<stopPrice>{stop_price}</stopPrice>"
             f"<limitPrice>{limit_price}</limitPrice>"
             f"<Instrument>"
-            f"<Product><securityType>{security_type}</securityType><symbol>{symbol}</symbol></Product>"
+            f"{product_block}"
             f"<orderAction>{order_action}</orderAction>"
-            f"<quantityType>QUANTITY</quantityType>"
-            f"<quantity>{quantity}</quantity>"
+            f"{quantity_block}"
             f"</Instrument>"
             f"</Order>"
             f"</{tag}>"
