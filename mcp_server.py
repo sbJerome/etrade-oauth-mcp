@@ -5,7 +5,7 @@ One-time setup:
   1. etrade_authorize_start()  → open URL → approve → copy verifier
   2. etrade_authorize_complete(verifier)
 
-Switch environments with etrade_set_sandbox(True/False). Default: sandbox.
+Switch environments with etrade_set_sandbox(True/False). Default: live.
 """
 
 import asyncio
@@ -49,8 +49,8 @@ mcp = FastMCP(
     "E*TRADE OAuth API",
     instructions=(
         "Official E*TRADE API via OAuth 1.0a. "
-        "Sandbox (apisb.etrade.com) is active by default. "
-        "Call etrade_set_sandbox(False) to switch to live (api.etrade.com). "
+        "Live (api.etrade.com) is active by default. "
+        "Call etrade_set_sandbox(True) to switch to sandbox (apisb.etrade.com). "
         "Credentials are stored in OpenBao — no manual key entry needed."
     ),
     host="0.0.0.0",

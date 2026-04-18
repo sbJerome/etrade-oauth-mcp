@@ -31,7 +31,7 @@ AI Client (Claude / ChatGPT / Gemini)
              │  OAuth 1.0a (rauth)
              ▼
    ┌─────────────────────┐
-   │  E*TRADE API        │  api.etrade.com (live, default)
+   │  E*TRADE API        │  api.etrade.com (live — default on main)
    │  (etrade_client.py) │
    └─────────────────────┘
              │
@@ -233,4 +233,4 @@ kubectl rollout restart deployment/etrade-oauth-mcp -n etrade
 - All order placements require a preview step first (`etrade_preview_order`)
 - OAuth 1.0a tokens expire after 2 hours of inactivity — use `etrade_renew_access_token()`
 - Mobile/internal E\*TRADE endpoints are intentionally excluded (not in official spec)
-- Live (`api.etrade.com`) is the default mode; sandbox URL (`apisb.etrade.com`) is commented out — switch with `etrade_set_sandbox(True)` if needed
+- Live (`api.etrade.com`) is the default on `main`; sandbox URL commented out — switch with `etrade_set_sandbox(True)` if needed
