@@ -378,7 +378,6 @@ class ETradeClient:
             f"{preview_block}"
             f"<Order>"
             f"<allOrNone>false</allOrNone>"
-            f"<priceType>NET_ASSET_VALUE</priceType>"
             f"<orderTerm>GOOD_FOR_DAY</orderTerm>"
             f"<marketSession>REGULAR</marketSession>"
             f"<Instrument>"

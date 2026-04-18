@@ -401,11 +401,16 @@ async def etrade_preview_order(
     strike_price: option strike price.
     quantity: number of contracts.
     --- Mutual Funds (security_type=MF) ---
-    investment_amount: dollar amount to invest (replaces quantity). Price type auto-set to NET_ASSET_VALUE.
+    investment_amount: dollar amount to invest (replaces quantity). Use etrade_preview_mf_order for MF orders.
     """
     if security_type == "ETF":
         security_type = "EQ"
     c = await _get_client()
+    if security_type == "MF":
+        return await _run(c.preview_mf_order, account_id_key,
+                          symbol=symbol, order_action=order_action,
+                          investment_amount=investment_amount, quantity=quantity,
+                          client_order_id=client_order_id)
     return await _run(c.preview_order, account_id_key,
                       symbol=symbol, order_action=order_action, quantity=quantity,
                       price_type=price_type, limit_price=limit_price, stop_price=stop_price,
@@ -444,9 +449,13 @@ async def etrade_place_order(
     expiry_date: YYYY-MM-DD (auto-parsed from OSI symbol if omitted).
     strike_price: strike price (auto-parsed from OSI symbol if omitted).
     """
-    import xml.etree.ElementTree as ET
     if security_type == "ETF":
         security_type = "EQ"
+    if security_type == "MF":
+        return await etrade_place_mf_order(account_id_key, symbol=symbol,
+                                           order_action=order_action,
+                                           investment_amount=investment_amount,
+                                           quantity=quantity)
     c = await _get_client()
     preview = await _run(c.preview_order, account_id_key,
                          symbol=symbol, order_action=order_action, quantity=quantity,
