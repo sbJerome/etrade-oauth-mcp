@@ -500,6 +500,86 @@ async def etrade_place_mf_order(
 
 
 @mcp.tool()
+async def etrade_skip_preview(
+    account_id_key: str,
+    symbol: str,
+    order_action: str,
+    quantity: Optional[int] = None,
+    price_type: str = "MARKET",
+    limit_price: Optional[float] = None,
+    stop_price: Optional[float] = None,
+    order_term: str = "GOOD_FOR_DAY",
+    security_type: str = "EQ",
+    market_session: str = "REGULAR",
+    call_or_put: Optional[str] = None,
+    expiry_date: Optional[str] = None,
+    strike_price: Optional[float] = None,
+    investment_amount: Optional[float] = None,
+    quantity_type: str = "DOLLAR",
+) -> dict:
+    """
+    Preview and immediately place an order in one step.
+
+    Accepts the same parameters as etrade_preview_order / etrade_preview_mf_order.
+    Routes to the MF flow automatically when security_type=MF.
+    Returns the place order response plus the preview that was used.
+    """
+    import xml.etree.ElementTree as ET
+
+    if security_type == "ETF":
+        security_type = "EQ"
+
+    c = await _get_client()
+
+    # Step 1 — preview
+    if security_type == "MF":
+        preview_result = await _run(c.preview_mf_order, account_id_key,
+                                    symbol=symbol, order_action=order_action,
+                                    investment_amount=investment_amount, quantity=quantity,
+                                    quantity_type=quantity_type)
+    else:
+        preview_result = await _run(c.preview_order, account_id_key,
+                                    symbol=symbol, order_action=order_action, quantity=quantity,
+                                    price_type=price_type, limit_price=limit_price,
+                                    stop_price=stop_price, order_term=order_term,
+                                    security_type=security_type, market_session=market_session,
+                                    call_or_put=call_or_put, expiry_date=expiry_date,
+                                    strike_price=strike_price)
+
+    # Extract previewId and clientOrderId from XML response
+    raw_xml = preview_result.get("raw", "")
+    if not raw_xml or preview_result.get("status_code", 200) >= 400:
+        return {"error": "Preview failed", "preview_response": preview_result}
+
+    try:
+        root = ET.fromstring(raw_xml)
+        preview_id = int(root.findtext(".//previewId"))
+        client_order_id = root.findtext(".//clientOrderId")
+    except Exception as e:
+        return {"error": f"Could not parse previewId from response: {e}",
+                "preview_response": preview_result}
+
+    # Step 2 — place
+    if security_type == "MF":
+        place_result = await _run(c.place_mf_order, account_id_key,
+                                  symbol=symbol, order_action=order_action,
+                                  investment_amount=investment_amount, quantity=quantity,
+                                  quantity_type=quantity_type,
+                                  client_order_id=client_order_id, preview_id=preview_id)
+    else:
+        place_result = await _run(c.place_order, account_id_key,
+                                  symbol=symbol, order_action=order_action, quantity=quantity,
+                                  price_type=price_type, limit_price=limit_price,
+                                  stop_price=stop_price, order_term=order_term,
+                                  security_type=security_type, market_session=market_session,
+                                  call_or_put=call_or_put, expiry_date=expiry_date,
+                                  strike_price=strike_price,
+                                  client_order_id=client_order_id, preview_id=preview_id)
+
+    return {"placed": place_result, "preview_id": preview_id, "client_order_id": client_order_id}
+
+
+@mcp.tool()
 async def etrade_cancel_order(account_id_key: str, order_id: int) -> dict:
     """Cancel an open order by order ID."""
     c = await _get_client()
