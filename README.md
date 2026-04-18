@@ -234,3 +234,12 @@ kubectl rollout restart deployment/etrade-oauth-mcp -n etrade
 - OAuth 1.0a tokens expire after 2 hours of inactivity — use `etrade_renew_access_token()`
 - Mobile/internal E\*TRADE endpoints are intentionally excluded (not in official spec)
 - Sandbox (`apisb.etrade.com`) is the default mode on `dev`; switch with `etrade_set_sandbox(False)` for live
+- Mutual fund order placement is not supported by the E\*TRADE public API — place MF orders through the E\*TRADE website
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+> **E\*TRADE API Disclaimer**: This project is an independent open-source tool and is not affiliated with, endorsed by, or sponsored by E\*TRADE Financial Corporation. Use of this software requires your own E\*TRADE developer account and agreement to [E\*TRADE's API Terms of Service](https://developer.etrade.com/home). You are solely responsible for compliance with those terms and for any trading activity conducted through this tool.
