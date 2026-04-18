@@ -310,19 +310,6 @@ class ETradeClient:
             )
             quantity_block = f"<quantityType>QUANTITY</quantityType><quantity>{quantity}</quantity>"
 
-        # Mutual fund — dollar amount, MARKET pricing, no stop/limit
-        elif security_type == "MF":
-            investment_amount = fields.get("investment_amount") or fields.get("quantity") or 0
-            stop_price = ""
-            limit_price = ""
-            product_block = (
-                f"<Product>"
-                f"<securityType>MF</securityType>"
-                f"<symbol>{symbol}</symbol>"
-                f"</Product>"
-            )
-            quantity_block = f"<quantityType>DOLLAR</quantityType><quantity>{investment_amount}</quantity>"
-
         # Equity / default
         else:
             quantity = int(fields["quantity"])
@@ -368,6 +355,55 @@ class ETradeClient:
         return self._parse(self._post(
             f"/v1/accounts/{account_id_key}/orders/place",
             data=self._order_xml("PlaceOrderRequest", fields),
+            headers=self._xml_headers(),
+        ))
+
+    def _mf_order_xml(self, tag: str, fields: dict) -> str:
+        client_order_id  = fields.get("client_order_id") or str(random.randint(1000000000, 9999999999))
+        symbol           = fields["symbol"]
+        order_action     = fields["order_action"]
+        quantity_type    = fields.get("quantity_type", "DOLLAR").upper()
+        investment_amount = fields.get("investment_amount") or fields.get("quantity") or 0
+
+        preview_block = ""
+        if tag == "PlaceOrderRequest":
+            preview_id = fields.get("preview_id")
+            if preview_id:
+                preview_block = f"<PreviewIds><previewId>{preview_id}</previewId></PreviewIds>"
+
+        return (
+            f"<{tag}>"
+            f"<orderType>MF</orderType>"
+            f"<clientOrderId>{client_order_id}</clientOrderId>"
+            f"{preview_block}"
+            f"<Order>"
+            f"<allOrNone>false</allOrNone>"
+            f"<priceType>NET_ASSET_VALUE</priceType>"
+            f"<orderTerm>GOOD_FOR_DAY</orderTerm>"
+            f"<marketSession>REGULAR</marketSession>"
+            f"<Instrument>"
+            f"<Product><securityType>MF</securityType><symbol>{symbol}</symbol></Product>"
+            f"<orderAction>{order_action}</orderAction>"
+            f"<quantityType>{quantity_type}</quantityType>"
+            f"<quantity>{investment_amount}</quantity>"
+            f"</Instrument>"
+            f"</Order>"
+            f"</{tag}>"
+        )
+
+    def preview_mf_order(self, account_id_key: str, **fields) -> dict:
+        """POST /v1/accounts/{accountIdKey}/orders/preview — mutual fund"""
+        return self._parse(self._post(
+            f"/v1/accounts/{account_id_key}/orders/preview",
+            data=self._mf_order_xml("PreviewOrderRequest", fields),
+            headers=self._xml_headers(),
+        ))
+
+    def place_mf_order(self, account_id_key: str, **fields) -> dict:
+        """POST /v1/accounts/{accountIdKey}/orders/place — mutual fund"""
+        return self._parse(self._post(
+            f"/v1/accounts/{account_id_key}/orders/place",
+            data=self._mf_order_xml("PlaceOrderRequest", fields),
             headers=self._xml_headers(),
         ))
 
